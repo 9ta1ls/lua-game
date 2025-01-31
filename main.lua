@@ -96,7 +96,12 @@ function love.load()
     game_map = sti('maps/map.lua')
 
 
-    player = {x = 480, y = 480 , speed  = 0.6}
+    player = {
+        x = 480, 
+        y = 480 , 
+        speed  = 0.6,
+        health = 30
+    }
 
     bullet_table = {}
     enemy_table = {}
@@ -158,7 +163,15 @@ function love.draw()
             love.graphics.setColor(1, 0 , 0)
             love.graphics.rectangle('fill', enemy.x - 8, enemy.y - 8, 16, 16)
         end
+        love.graphics.setColor(0, 0, 0)
+        love.graphics.rectangle('fill', player.x - 15 , player.y - 20, 30, 4)
+        love.graphics.setColor(1, 0, 0)
+        love.graphics.rectangle('fill', player.x - 15 , player.y - 20, player.health * 0.6 , 4)
         love.graphics.setColor(1, 1, 1)
+
+
+
+
     cam:detach()
 end
 
