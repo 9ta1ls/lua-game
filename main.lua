@@ -36,19 +36,26 @@ function shoot(player_x, player_y)
             local bullet = {
                 x = player_x,
                 y = player_y,
-                speed = 3,
+                radius = 2,
+                speed = 350,
                 dx = dx,
-                dy = dy
+                dy = dy,
+                type = "bullet"
             }
 
             table.insert(bullet_table, bullet)
+            world:add(bullet, bullet.x, bullet.y ,bullet.radius * 2, bullet.radius *2)
+            local newX, newY = player.x + dx , player.y + dy
+            local actualX, actualY, cols, len = world:move(bullet, newX, newY, bulletFilter)
+        
+            bullet.x, bullet.y = actualX, actualY
         end
     end
     
 end
 
 
-function create_enemy(player_x, player_y)
+function create_enemy(player_x, player_y, dt)
     local enemy_x, enemy_y
     repeat
         enemy_x = math.random(player_x - 500, player_x + 500)
@@ -56,21 +63,31 @@ function create_enemy(player_x, player_y)
     until math.sqrt((enemy_x - player_x)^2 + (enemy_y - player_y)^2) > 400
     interval = 1
     if enemy_timer >= interval then
-       enemy = {x = enemy_x, y = enemy_y, speed = 0.35}
+       enemy = {
+           x = enemy_x, 
+           y = enemy_y,
+           h = 16,
+           w = 16,
+           speed = 70,
+           type = "enemy"
+        }
        table.insert(enemy_table, enemy)
+       world:add(enemy, enemy_x, enemy_y, enemy.w, enemy.h)
        enemy_timer = 0 
     end
 
     for _, enemy in ipairs(enemy_table) do
-        moveEnemy(enemy)
+        moveEnemy(enemy, dt)
     end
 end
 
 
-function moveEnemy(enemy)
+function moveEnemy(enemy, dt)
     -- Вектор напрямку
     local dx = player.x - enemy.x
     local dy = player.y - enemy.y
+
+    
 
     -- Нормалізація (щоб ворог рухався рівномірно)
     local length = math.sqrt(dx * dx + dy * dy)
@@ -79,13 +96,76 @@ function moveEnemy(enemy)
         dy = dy / length
     end
 
-    -- Рух ворога
+--[[     -- Рух ворога
     enemy.x = enemy.x + dx * enemy.speed
-    enemy.y = enemy.y + dy * enemy.speed
+    enemy.y = enemy.y + dy * enemy.speed ]]
+
+    local newX, newY = enemy.x + dx * enemy.speed * dt, enemy.y + dy * enemy.speed * dt
+    local actualX, actualY, cols, len = world:move(enemy, newX, newY, enemyFilter)
+
+    enemy.x, enemy.y = actualX, actualY
+    
 end
+
+function enemyFilter(item, other)
+    if other.type == "player" then
+        return "cross" 
+    elseif other.type == "bullet" then
+        return "bounce" 
+    elseif other.type == "enemy" then
+        return "slide"
+    else
+        return "cross"
+    end
+end
+
+function playerFilter(item, other)
+    if other.type == "enemy" then
+        return "cross" 
+    else
+        return "cross" 
+    end
+end
+
+function bulletFilter(item, other)
+    if other.type == "enemy" then
+        return "touch" 
+    else
+        return "cross" 
+    end
+end
+
+--move player 
+function updatePlayer(dt)
+    local dx, dy = 0, 0
+
+    if love.keyboard.isDown('w') then
+        dy = -player.speed * dt
+    end
+    if love.keyboard.isDown('a') then
+        dx = -player.speed * dt
+    end
+    if love.keyboard.isDown('s') then
+        dy = player.speed * dt
+    end
+    if love.keyboard.isDown('d') then
+        dx = player.speed * dt
+    end
+
+    local newX, newY = player.x + dx, player.y + dy
+    local actualX, actualY, cols, len = world:move(player, newX, newY, playerFilter)
+
+    player.x, player.y = actualX, actualY
+end
+--
+
 
 
 function love.load()
+
+    bump = require 'lib/bump'
+    world = bump.newWorld(16) 
+
     window_height = 600
     window_width = 800
     camera = require 'lib/camera'
@@ -98,10 +178,14 @@ function love.load()
 
     player = {
         x = 480, 
-        y = 480 , 
-        speed  = 0.6,
-        health = 30
+        y = 480, 
+        radius = 10,
+        speed  = 100,
+        health = 30,
+        type = "player"
     }
+
+    world:add(player, player.x, player.y, player.radius * 2, player.radius * 2)
 
     bullet_table = {}
     enemy_table = {}
@@ -117,29 +201,15 @@ function love.update(dt)
     bullet_timer = bullet_timer + dt
     enemy_timer = enemy_timer + dt
 
-    if love.keyboard.isDown('w') then
-        player.y = player.y - player.speed 
-    end
-
-    if love.keyboard.isDown('a') then
-        player.x = player.x - player.speed 
-    end
-
-    if love.keyboard.isDown('s') then
-        player.y = player.y + player.speed
-    end
-
-    if love.keyboard.isDown('d') then
-        player.x = player.x + player.speed
-    end
+    updatePlayer(dt)
 
     shoot(player.x, player.y)
 
-    create_enemy(player.x, player.y)
+    create_enemy(player.x, player.y, dt)
 
     for i, bullet in ipairs(bullet_table) do
-        bullet.x = bullet.x + bullet.dx * bullet.speed
-        bullet.y = bullet.y + bullet.dy * bullet.speed
+        bullet.x = bullet.x + bullet.dx * bullet.speed * dt
+        bullet.y = bullet.y + bullet.dy * bullet.speed * dt
     end
 
     cam:lookAt(player.x * cam.scale, player.y * cam.scale)
@@ -152,26 +222,29 @@ function love.draw()
         game_map:drawLayer(game_map.layers["ground"])
         game_map:drawLayer(game_map.layers["objects"])
 
-        love.graphics.setColor(1, 1, 1) -- Білий колір
-        love.graphics.circle('fill', player.x, player.y , 10)
+        --draw player
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.circle('fill', player.x, player.y , player.radius)
 
-        for _, value in ipairs(bullet_table) do
-            love.graphics.circle('fill', value.x, value.y, 2)
+        --draw bullets
+        for _, bullet in ipairs(bullet_table) do
+            love.graphics.circle('fill', bullet.x, bullet.y, bullet.radius)
         end
 
+        --draw enemies
         for _, enemy in ipairs(enemy_table) do
             love.graphics.setColor(1, 0 , 0)
-            love.graphics.rectangle('fill', enemy.x - 8, enemy.y - 8, 16, 16)
+            love.graphics.rectangle('fill', enemy.x - 8, enemy.y - 8, enemy.w , enemy.h)
         end
+
+        --draw player health bar 
         love.graphics.setColor(0, 0, 0)
         love.graphics.rectangle('fill', player.x - 15 , player.y - 20, 30, 4)
         love.graphics.setColor(1, 0, 0)
+
+        --draw player health bar background
         love.graphics.rectangle('fill', player.x - 15 , player.y - 20, player.health * 0.6 , 4)
         love.graphics.setColor(1, 1, 1)
-
-
-
-
     cam:detach()
 end
 
