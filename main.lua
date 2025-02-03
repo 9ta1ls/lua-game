@@ -63,12 +63,12 @@ function create_enemy(player_x, player_y)
         enemy_x = math.random(player_x - 500, player_x + 500)
         enemy_y = math.random(player_y - 500, player_y + 500)
     until math.sqrt((enemy_x - player_x)^2 + (enemy_y - player_y)^2) > 400
-    interval = 0.5
+    interval = 0.7
     if enemy_timer >= interval then
         enemy = {
         x = enemy_x, 
         y = enemy_y, 
-        speed = 120,
+        speed = 100,
         type = "enemy",
         toRemove = false
     }
@@ -137,7 +137,7 @@ end
 
 function love.load()
 
-
+    is_game_paused = false 
     
     window_height = 600
     window_width = 800
@@ -162,6 +162,8 @@ function love.load()
         type = "player"
     }
 
+
+
     player.collider = world:newCollider("Circle", {player.x, player.y, player.radius})
     player.collider:getBody():setUserData(player)
 
@@ -176,61 +178,76 @@ end
 
 
 function love.update(dt)
-    world:update(dt)
 
-    local dx, dy = 0, 0
+    if love.keyboard.isDown('p') then
+        is_game_paused =  not is_game_paused
+    end
 
-    bullet_timer = bullet_timer + dt
-    enemy_timer = enemy_timer + dt
 
-    if love.keyboard.isDown('w') then
-        dy = player.speed * -1
-   end
+    if is_game_paused == false then
+        world:update(dt)
 
-    if love.keyboard.isDown('a') then
-        dx = player.speed * -1
-   end
+        if player.health <= 0 then 
+            is_game_paused = true
+        end
 
-    if love.keyboard.isDown('s') then
-        dy = player.speed
-   end
+        local dx, dy = 0, 0
 
-    if love.keyboard.isDown('d') then
-        dx = player.speed 
-   end
+        bullet_timer = bullet_timer + dt
+        enemy_timer = enemy_timer + dt
 
- 
+        if love.keyboard.isDown('w') then
+            dy = player.speed * -1
+        end
 
-    player.collider:setLinearVelocity(dx , dy )
-    player.x = player.collider:getX()
-    player.y = player.collider:getY()
+        if love.keyboard.isDown('a') then
+            dx = player.speed * -1
+        end
 
-    shoot(player.x, player.y, dt)
+        if love.keyboard.isDown('s') then
+            dy = player.speed
+          end
+
+        if love.keyboard.isDown('d') then
+            dx = player.speed 
+          end
+
+
+       
     
 
-    create_enemy(player.x, player.y)
+        player.collider:setLinearVelocity(dx , dy )
+        player.x = player.collider:getX()
+        player.y = player.collider:getY()
 
-    for _, bullet in ipairs(bullet_table) do
-        bullet.x = bullet.collider:getX()
-        bullet.y = bullet.collider:getY()
-    end
+        shoot(player.x, player.y, dt)
+        
 
-    for i = #bullet_table, 1, -1 do
-        local bullet = bullet_table[i]
-        if bullet.toRemove then
-            table.remove(bullet_table, i)
+        create_enemy(player.x, player.y)
+
+        for _, bullet in ipairs(bullet_table) do
+            bullet.x = bullet.collider:getX()
+            bullet.y = bullet.collider:getY()
         end
-    end
 
-    for i = #enemy_table, 1, -1 do
-        local enemy = enemy_table[i]
-        if enemy.toRemove then
-            table.remove(enemy_table, i)
+        for i = #bullet_table, 1, -1 do
+            local bullet = bullet_table[i]
+            if bullet.toRemove then
+                table.remove(bullet_table, i)
+            end
         end
-    end
 
-    cam:lookAt(player.x * cam.scale, player.y * cam.scale)
+        for i = #enemy_table, 1, -1 do
+            local enemy = enemy_table[i]
+            if enemy.toRemove then
+                table.remove(enemy_table, i)
+            end
+        end
 
+        cam:lookAt(player.x * cam.scale, player.y * cam.scale)
+
+        end     
+        
 end
 
 function love.draw()
