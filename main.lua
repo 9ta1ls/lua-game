@@ -1,63 +1,11 @@
 
-function shoot(player_x , player_y, dt)
-    if #enemy_table == 0 then
-        return 
-    end
+local player = require 'player'
 
-    interval = 1
+local bullet = require 'bullet'
 
-    if bullet_timer >= interval then
-       bullet_timer = 0 
+local enemy = require 'enemy'
 
-        --find nearest enemy 
-        local nearest_enemy
-        local smallest_lenght = 10000
-        for _, enemy in ipairs(enemy_table) do
-            local vector_length = math.sqrt((enemy.x - player_x)^2 + (enemy.y - player_y)^2)
-            if smallest_lenght > vector_length then
-                smallest_lenght = vector_length
-                nearest_enemy = enemy
-            end
-        end
-
-        if nearest_enemy then
-            local dx = nearest_enemy.x - player_x 
-            local dy = nearest_enemy.y - player_y
-
-            -- Нормалізація вектора напряму
-            local length = math.sqrt(dx * dx + dy * dy)
-            if length > 0 then
-                dx = dx / length
-                dy = dy / length
-            end
-
-            local offset = player.radius + 10
-            -- Створення кулі
-            local bullet = {
-                x = player_x + dx * offset,
-                y = player_y + dy * offset,
-                speed = 450,
-                dx = dx,
-                dy = dy,
-                radius = 2,
-                type = "bullet",
-                toRemove = false
-            }
-
-            bullet.collider = world:newCollider("Circle", {bullet.x, bullet.y, bullet.radius}, bullet)
-            bullet.collider:setLinearVelocity(bullet.dx * bullet.speed, bullet.dy * bullet.speed)
-            bullet.collider:getBody():setUserData(bullet)
-
-
-            table.insert(bullet_table, bullet)
-
-        end
-    end
-    
-end
-
-
-function create_enemy(player_x, player_y)
+--[[ function create_enemy(player_x, player_y)
     local enemy_x, enemy_y
     repeat
         enemy_x = math.random(player_x - 500, player_x + 500)
@@ -83,10 +31,10 @@ function create_enemy(player_x, player_y)
     for _, enemy in ipairs(enemy_table) do
         moveEnemy(enemy)
     end
-end
+end ]]
 
 
-function moveEnemy(enemy)
+--[[ function moveEnemy(enemy)
     -- Вектор напрямку
     local dx = player.x - enemy.x
     local dy = player.y - enemy.y
@@ -103,7 +51,7 @@ function moveEnemy(enemy)
     enemy.collider:setLinearVelocity(dx * enemy.speed, dy * enemy.speed);
     enemy.x = enemy.collider:getX()
     enemy.y = enemy.collider:getY()
-end
+end ]]
 
 
 
@@ -152,27 +100,12 @@ function love.load()
     world = bf.newWorld(0,0, true)
     world:setCallbacks(beginContact)
 
-
-    player = {
-        x = 480, 
-        y = 480 , 
-        speed  = 100,
-        health = 50,
-        radius = 10,
-        type = "player"
-    }
-
-
-
-    player.collider = world:newCollider("Circle", {player.x, player.y, player.radius})
-    player.collider:getBody():setUserData(player)
-
+    player.load(world)
+    bullet.load()
 
     bullet_table = {}
     enemy_table = {}
-
-    bullet_timer = 0
-    enemy_timer = 0
+     enemy_timer = 0
 
 end
 
@@ -193,56 +126,24 @@ function love.update(dt)
 
         local dx, dy = 0, 0
 
-        bullet_timer = bullet_timer + dt
         enemy_timer = enemy_timer + dt
 
-        if love.keyboard.isDown('w') then
-            dy = player.speed * -1
-        end
+        player.update(dt)
 
-        if love.keyboard.isDown('a') then
-            dx = player.speed * -1
-        end
+        bullet.update(player, dt)
 
-        if love.keyboard.isDown('s') then
-            dy = player.speed
-          end
+        enemy.update(player, dt, world)
 
-        if love.keyboard.isDown('d') then
-            dx = player.speed 
-          end
-
-
-       
-    
-
-        player.collider:setLinearVelocity(dx , dy )
-        player.x = player.collider:getX()
-        player.y = player.collider:getY()
-
-        shoot(player.x, player.y, dt)
-        
-
-        create_enemy(player.x, player.y)
-
-        for _, bullet in ipairs(bullet_table) do
-            bullet.x = bullet.collider:getX()
-            bullet.y = bullet.collider:getY()
-        end
-
-        for i = #bullet_table, 1, -1 do
+--[[         create_enemy(player.x, player.y)
+ ]]
+--[[         for i = #bullet_table, 1, -1 do
             local bullet = bullet_table[i]
             if bullet.toRemove then
                 table.remove(bullet_table, i)
             end
-        end
+        end ]]
 
-        for i = #enemy_table, 1, -1 do
-            local enemy = enemy_table[i]
-            if enemy.toRemove then
-                table.remove(enemy_table, i)
-            end
-        end
+      
 
         cam:lookAt(player.x * cam.scale, player.y * cam.scale)
 
@@ -256,25 +157,12 @@ function love.draw()
         game_map:drawLayer(game_map.layers["ground"])
         game_map:drawLayer(game_map.layers["objects"])
    
+        
+  
+        enemy.draw()
 
-        love.graphics.setColor(1, 1, 1) -- Білий колір
-        love.graphics.circle('fill', player.x, player.y , player.radius)
-
-        for _, bullet in ipairs(bullet_table) do
-            love.graphics.circle('fill', bullet.collider:getX(), bullet.collider:getY(), 2)
-        end
-
-        for _, enemy in ipairs(enemy_table) do
-            love.graphics.setColor(1, 0 , 0)
-            love.graphics.rectangle('fill', enemy.x - 8, enemy.y - 8, 16, 16)
-        end
-
-        love.graphics.setColor(0, 0, 0)
-        love.graphics.rectangle('fill', player.x - 15 , player.y - 20, 30, 4)
-        love.graphics.setColor(1, 0, 0)
-        love.graphics.rectangle('fill', player.x - 15 , player.y - 20, player.health * 0.6 , 4)
-        love.graphics.setColor(1, 1, 1)
-
+        player.draw()
+        bullet.draw()
     cam:detach()
 end
 
