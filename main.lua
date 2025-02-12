@@ -5,54 +5,7 @@ local bullet = require 'bullet'
 
 local enemy = require 'enemy'
 
---[[ function create_enemy(player_x, player_y)
-    local enemy_x, enemy_y
-    repeat
-        enemy_x = math.random(player_x - 500, player_x + 500)
-        enemy_y = math.random(player_y - 500, player_y + 500)
-    until math.sqrt((enemy_x - player_x)^2 + (enemy_y - player_y)^2) > 400
-    interval = 0.7
-    if enemy_timer >= interval then
-        enemy = {
-        x = enemy_x, 
-        y = enemy_y, 
-        speed = 100,
-        type = "enemy",
-        toRemove = false
-    }
-       enemy.collider = world:newCollider("Circle", {enemy.x, enemy.y, 10})
-       enemy.collider:getBody():setUserData(enemy)
-    
-
-       table.insert(enemy_table, enemy)
-       enemy_timer = 0 
-    end
-
-    for _, enemy in ipairs(enemy_table) do
-        moveEnemy(enemy)
-    end
-end ]]
-
-
---[[ function moveEnemy(enemy)
-    -- Вектор напрямку
-    local dx = player.x - enemy.x
-    local dy = player.y - enemy.y
-
-    -- Нормалізація (щоб ворог рухався рівномірно)
-    local length = math.sqrt(dx * dx + dy * dy)
-    if length > 0 then
-        dx = dx / length
-        dy = dy / length
-    end
-
-    -- Рух ворога
-
-    enemy.collider:setLinearVelocity(dx * enemy.speed, dy * enemy.speed);
-    enemy.x = enemy.collider:getX()
-    enemy.y = enemy.collider:getY()
-end ]]
-
+local xp = require 'xp'
 
 
 function beginContact(a, b, coll)
@@ -65,6 +18,12 @@ function beginContact(a, b, coll)
 
     if (objA.type == "bullet" and objB.type == "enemy") or
        (objB.type == "bullet" and objA.type == "enemy") then
+        if objA.type == "enemy" then
+            xp.createXP(objA)
+            print(objA)
+        else
+            xp.createXP(objB)
+        end
         objA.toRemove = true
         objB.toRemove = true
         a:destroy()
@@ -76,6 +35,14 @@ function beginContact(a, b, coll)
         else
             objB.health = objB.health - 5
         end
+
+    elseif (objA.type == "player" and objB.type == "xp") or
+            (objB.type == "player" and objA.type == "xp") then
+        if objA.xp then
+            objA.xp = objA.xp - 5 
+        else
+            objB.xp = objB.xp - 5
+ end
     end
 end
 
@@ -100,12 +67,14 @@ function love.load()
     world = bf.newWorld(0,0, true)
     world:setCallbacks(beginContact)
 
+    xp_table = {}
+    bullet_table = {}
+    enemy_table = {}
+ 
     player.load(world)
     bullet.load()
 
-    bullet_table = {}
-    enemy_table = {}
-     enemy_timer = 0
+    enemy_timer = 0
 
 end
 
@@ -134,17 +103,8 @@ function love.update(dt)
 
         enemy.update(player, dt, world)
 
---[[         create_enemy(player.x, player.y)
- ]]
---[[         for i = #bullet_table, 1, -1 do
-            local bullet = bullet_table[i]
-            if bullet.toRemove then
-                table.remove(bullet_table, i)
-            end
-        end ]]
-
-      
-
+        xp.update(dt, world)
+        
         cam:lookAt(player.x * cam.scale, player.y * cam.scale)
 
         end     
@@ -163,8 +123,33 @@ function love.draw()
 
         player.draw()
         bullet.draw()
+        xp.draw()
+        world:draw()
+
     cam:detach()
+    drawXPBar()
+
 end
 
 
+
+function drawXPBar()
+    local bar_width = love.graphics.getWidth()  -- Повна ширина екрану
+    local bar_height = 15   -- Висота полоски
+    local bar_x = 0         -- Початок з лівого краю
+    local bar_y = 0      -- Відступ від верху
+
+    local xp_percent = player.xp / player.max_xp  -- Відсоток досвіду
+
+    -- Фон полоски (чорний)
+    love.graphics.setColor(0, 0, 0)
+    love.graphics.rectangle("fill", bar_x, bar_y, bar_width, bar_height)
+
+    -- Заповнена частина досвідом (синя)
+    love.graphics.setColor(0, 1, 0)
+    love.graphics.rectangle("fill", bar_x, bar_y, bar_width * xp_percent, bar_height)
+
+    -- Повертаємо стандартний колір
+    love.graphics.setColor(1, 1, 1)
+end
 

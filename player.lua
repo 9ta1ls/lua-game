@@ -7,6 +7,8 @@ function player.load(world)
     player.health = 50
     player.radius = 10
     player.type = "player"
+    player.xp = 50
+    player.max_xp = 100
     
     player.collider = world:newCollider("Circle", {player.x, player.y, player.radius})
     player.collider:getBody():setUserData(player)
@@ -43,12 +45,20 @@ function player.draw()
     love.graphics.setColor(1, 1, 1) -- Білий колір
     love.graphics.circle('fill', player.x, player.y , player.radius)
 
+    --hp bar
     love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle('fill', player.x - 15 , player.y - 20, 30, 4)
     love.graphics.setColor(1, 0, 0)
     love.graphics.rectangle('fill', player.x - 15 , player.y - 20, player.health * 0.6 , 4)
+
+
+
     love.graphics.setColor(1, 1, 1)
+    
 
 end
+
+
+
 
 return player
