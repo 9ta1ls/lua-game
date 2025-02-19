@@ -8,10 +8,13 @@ end
 
 function enemy.update(player, dt, world)
     create_enemy(player, world)
-
+        
     for i = #enemy_table, 1, -1 do
         local enemy = enemy_table[i]    
         if enemy.toRemove then
+            if enemy.collider then
+                enemy.collider:destroy()
+            end
             table.remove(enemy_table, i)
         end
     end
@@ -64,6 +67,9 @@ function create_enemy(player, world)
     }
        enemy.collider = world:newCollider("Circle", {enemy.x, enemy.y, 10})
        enemy.collider:getBody():setUserData(enemy)
+
+        enemy.collider:setCategory(3)
+        enemy.collider:setMask(4)
     
 
        table.insert(enemy_table, enemy)

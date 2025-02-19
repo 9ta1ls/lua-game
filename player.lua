@@ -7,8 +7,9 @@ function player.load(world)
     player.health = 50
     player.radius = 10
     player.type = "player"
-    player.xp = 50
+    player.xp = 0
     player.max_xp = 100
+    player.level = 1
     
     player.collider = world:newCollider("Circle", {player.x, player.y, player.radius})
     player.collider:getBody():setUserData(player)
@@ -39,6 +40,11 @@ function player.update(dt)
     player.x = player.collider:getX()
     player.y = player.collider:getY()
 
+    if player.xp >= player.max_xp then
+        player.level = player.level + 1
+        player.max_xp = player.max_xp + 100
+    end
+
 end
 
 function player.draw()
@@ -54,7 +60,7 @@ function player.draw()
 
 
     love.graphics.setColor(1, 1, 1)
-    
+    love.graphics.print("LVL:" .. player.level, player.x - 250, player.y - 200)    
 
 end
 

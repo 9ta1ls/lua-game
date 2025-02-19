@@ -5,31 +5,54 @@ function xp.createXP(enemy)
     newXP.x = enemy.x
     newXP.y = enemy.y
     newXP.type = "xp"
-    newXP.toRemove = false    
+    newXP.toRemove = false   
+    newXP.speed = 200
 
     
     table.insert(xp_table, newXP)
 
 end
 
+function xpMove(xp, player)
+    local dx = player.x - xp.x
+    local dy = player.y - xp.y
+
+    local length = math.sqrt(dx * dx + dy * dy)
+    if length < 50 then
+        if length > 0 then
+            dx = dx / length
+            dy = dy / length
+        end
+    
+        xp.collider:setLinearVelocity(dx * xp.speed, dy * xp.speed);
+        xp.x = xp.collider:getX()
+        xp.y = xp.collider:getY()
+    end
+end
+
 function xp.spawnXP(world)
     for _, xp in ipairs(xp_table) do
-        print("meeeeeow")
         if not xp.collider then
             xp.collider = world:newCollider("Rectangle", {xp.x, xp.y, 8, 10})
-            print("meow")
             xp.collider:getBody():setUserData(xp)
+            xp.collider:setCategory(4)
         end
     end
 end
 
-function xp.update(dt, world)
+function xp.update(dt, world, player)
     xp.spawnXP(world)
 
-    
+    for _, xp in ipairs(xp_table) do
+        xpMove(xp, player)
+    end
+
     for i = #xp_table, 1, -1 do
         local xp = xp_table[i]    
         if xp.toRemove then
+            if xp.collider then
+                xp.collider:destroy()
+            end
             table.remove(xp_table, i)
         end
     end

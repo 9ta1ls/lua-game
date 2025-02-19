@@ -26,8 +26,6 @@ function beginContact(a, b, coll)
         end
         objA.toRemove = true
         objB.toRemove = true
-        a:destroy()
-        b:destroy()
     elseif (objA.type == "player" and objB.type == "enemy") or
            (objB.type == "player" and objA.type == "enemy") then
         if objA.health then
@@ -39,10 +37,13 @@ function beginContact(a, b, coll)
     elseif (objA.type == "player" and objB.type == "xp") or
             (objB.type == "player" and objA.type == "xp") then
         if objA.xp then
-            objA.xp = objA.xp - 5 
+            objA.xp = objA.xp + 5
+            objB.toRemove = true
+ 
         else
-            objB.xp = objB.xp - 5
- end
+            objB.xp = objB.xp + 5
+            objA.toRemove = true 
+        end
     end
 end
 
@@ -103,7 +104,7 @@ function love.update(dt)
 
         enemy.update(player, dt, world)
 
-        xp.update(dt, world)
+        xp.update(dt, world, player)
         
         cam:lookAt(player.x * cam.scale, player.y * cam.scale)
 
@@ -120,10 +121,10 @@ function love.draw()
         
   
         enemy.draw()
-
+        xp.draw()
         player.draw()
         bullet.draw()
-        xp.draw()
+       
         world:draw()
 
     cam:detach()

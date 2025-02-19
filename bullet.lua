@@ -48,6 +48,9 @@ function shoot(player, dt)
             bullet.collider = world:newCollider("Circle", {bullet.x, bullet.y, bullet.radius}, bullet)
             bullet.collider:setLinearVelocity(bullet.dx * bullet.speed, bullet.dy * bullet.speed)
             bullet.collider:getBody():setUserData(bullet)
+            bullet.collider:setCategory(2)
+
+            bullet.collider:setMask(4)
 
 
             table.insert(bullet_table, bullet)
@@ -66,17 +69,22 @@ function bullet.update(player,dt)
 
     shoot(player, dt)
 
+    for i = #bullet_table, 1, -1 do
+        local bullet = bullet_table[i]
+        if bullet.toRemove then
+            if bullet.collider then
+                bullet.collider:destroy()
+            end
+            table.remove(bullet_table, i)
+        end
+    end
+
     for _, bullet in ipairs(bullet_table) do
         bullet.x = bullet.collider:getX()
         bullet.y = bullet.collider:getY()
     end
 
-    for i = #bullet_table, 1, -1 do
-        local bullet = bullet_table[i]
-        if bullet.toRemove then
-            table.remove(bullet_table, i)
-        end
-    end
+
 
 end
 
