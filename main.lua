@@ -7,6 +7,7 @@ local enemy = require 'enemy'
 
 local xp = require 'xp'
 
+local collisionHandler = require 'collisionHandler'
 
 function beginContact(a, b, coll)
     local objA = a:getBody():getUserData()
@@ -18,14 +19,8 @@ function beginContact(a, b, coll)
 
     if (objA.type == "bullet" and objB.type == "enemy") or
        (objB.type == "bullet" and objA.type == "enemy") then
-        if objA.type == "enemy" then
-            xp.createXP(objA)
-            print(objA)
-        else
-            xp.createXP(objB)
-        end
-        objA.toRemove = true
-        objB.toRemove = true
+        collisionHandler.enemyBullet(objA , objB)
+       
     elseif (objA.type == "player" and objB.type == "enemy") or
            (objB.type == "player" and objA.type == "enemy") then
         if objA.health then
@@ -119,9 +114,8 @@ function love.draw()
         game_map:drawLayer(game_map.layers["objects"])
    
         
-  
-        enemy.draw()
         xp.draw()
+        enemy.draw()
         player.draw()
         bullet.draw()
        

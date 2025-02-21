@@ -5,7 +5,7 @@ function shoot(player, dt)
         return 
     end
 
-    interval = 1
+    interval = 0.3
 
     if bullet_timer >= interval then
        bullet_timer = 0 
@@ -42,7 +42,8 @@ function shoot(player, dt)
                 dy = dy,
                 radius = 2,
                 type = "bullet",
-                toRemove = false
+                toRemove = false,
+                damage = 15
             }
 
             bullet.collider = world:newCollider("Circle", {bullet.x, bullet.y, bullet.radius}, bullet)

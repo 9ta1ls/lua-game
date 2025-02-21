@@ -63,7 +63,8 @@ function create_enemy(player, world)
         y = enemy_y, 
         speed = 100,
         type = "enemy",
-        toRemove = false
+        toRemove = false,
+        health = 50
     }
        enemy.collider = world:newCollider("Circle", {enemy.x, enemy.y, 10})
        enemy.collider:getBody():setUserData(enemy)
